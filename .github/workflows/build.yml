@@ -1,0 +1,50 @@
+name: Build sys-con
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t sys-con-switch-builder:ci -f docker/Dockerfile docker
+
+      - name: Build project in Docker
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e DEVKITPRO=/opt/devkitpro \
+            -e DEVKITA64=/opt/devkitpro/devkitA64 \
+            -e LIBNX=/opt/devkitpro/libnx \
+            -e PORTLIBS=/opt/devkitpro/portlibs \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            sys-con-switch-builder:ci \
+            bash -lc '
+              set -euo pipefail
+              export PATH="$DEVKITA64/bin:$DEVKITPRO/tools/bin:$PORTLIBS/switch/bin:$PATH"
+              make -j"$(nproc)"
+            '
+
+      - name: Create release archive
+        run: |
+          test -d out
+          cd out
+          zip -r "../sys-con-${GITHUB_SHA}.zip" .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sys-con-${{ github.sha }}
+          path: sys-con-${{ github.sha }}.zip
+          if-no-files-found: error

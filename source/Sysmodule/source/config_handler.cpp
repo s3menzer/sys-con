@@ -7,6 +7,7 @@
 #include <cstring>
 #include "usb_module.h"
 #include "SwitchUtils.h"
+#include <array>
 
 namespace syscon::config
 {

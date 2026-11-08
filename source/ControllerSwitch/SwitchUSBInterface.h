@@ -1,6 +1,7 @@
 #pragma once
 #include "SwitchUSBEndpoint.h"
 #include "IUSBInterface.h"
+#include <array>
 #include <memory>
 #include <vector>
 
